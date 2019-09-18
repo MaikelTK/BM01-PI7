@@ -1,6 +1,6 @@
 def reverse_string(string):
 
-    print('Normal strin: ', string)
+    print('Normal string: ', string)
     new_string = ''
     string_index = len(string) - 1
 
