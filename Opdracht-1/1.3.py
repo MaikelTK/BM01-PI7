@@ -1,11 +1,11 @@
 ## Weegschaal
-
 def weegschaal(lijst):
     Schaal_A = []
     Schaal_B = []
     a_totaal = 0
     b_totaal = 0
 
+    ##Sorteer van groot naar klein
     lijst.sort(reverse=True)
     print(lijst)
 
@@ -15,6 +15,7 @@ def weegschaal(lijst):
         else:
             Schaal_A.append(i)
 
+        ##Get new total
         a_totaal = sum(Schaal_A)
         b_totaal = sum(Schaal_B)
 
@@ -22,6 +23,4 @@ def weegschaal(lijst):
     print('B = ', b_totaal, ' = ', Schaal_B)
 
 gewichten = [20, 45, 23, 75, 13, 45, 52, 33, 35, 28]
-
-
 weegschaal(gewichten)
