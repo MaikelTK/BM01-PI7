@@ -1,7 +1,7 @@
 ### SETUP ###
 import random
 from tkinter import *
-import tkinter.messagebox
+from tkinter import messagebox
 tk = Tk()
 tk.title('Tic Tac Toe')
 
@@ -75,6 +75,7 @@ def ai_Turn():
 def checkGameEnd():
     global game_End
     global winner
+    global remaining_moves
 
     ##Winconditions O
     if (Field[0] == 'O' and Field[1] == 'O' and Field[2] == 'O' or #horizontal_1
@@ -87,24 +88,28 @@ def checkGameEnd():
         Field[2] == 'O' and Field[4] == 'O' and Field[6] == 'O'  #diagonal_2
         ):
         winner = 'O'
-        tkinter.messagebox.showinfo('Payer O Won')
+        messagebox.showinfo('Game End', 'Payer O Won!')
         game_End = True
 
     ##Winconditions X
     elif (Field[0] == 'X' and Field[1] == 'X' and Field[2] == 'X' or #horizontal_1
-        Field[3] == 'X' and Field[4] == 'X' and Field[5] == 'X' or #horizontal_2
-        Field[6] == 'X' and Field[7] == 'X' and Field[8] == 'X' or #horizontal_3
-        Field[0] == 'X' and Field[3] == 'X' and Field[6] == 'X' or #vertical_1
-        Field[1] == 'X' and Field[3] == 'X' and Field[7] == 'X' or #vertical_2
-        Field[2] == 'X' and Field[5] == 'X' and Field[8] == 'X' or #vertical_3
-        Field[0] == 'X' and Field[4] == 'X' and Field[8] == 'X' or #diagonal_1
-        Field[2] == 'X' and Field[4] == 'X' and Field[6] == 'X'  #diagonal_2
-        ):
+            Field[3] == 'X' and Field[4] == 'X' and Field[5] == 'X' or #horizontal_2
+            Field[6] == 'X' and Field[7] == 'X' and Field[8] == 'X' or #horizontal_3
+            Field[0] == 'X' and Field[3] == 'X' and Field[6] == 'X' or #vertical_1
+            Field[1] == 'X' and Field[4] == 'X' and Field[7] == 'X' or #vertical_2
+            Field[2] == 'X' and Field[5] == 'X' and Field[8] == 'X' or #vertical_3
+            Field[0] == 'X' and Field[4] == 'X' and Field[8] == 'X' or #diagonal_1
+            Field[2] == 'X' and Field[4] == 'X' and Field[6] == 'X'  #diagonal_2
+            ):
         winner = 'X'
-        tkinter.messagebox.showinfo('Payer X Won')
+        messagebox.showinfo('Game End', 'Payer X Won')
         game_End = True
 
-    ##Draw
+    #GameTie
+    elif remaining_moves == 0 and winner == ' ':
+        game_End = True
+        messagebox.showinfo('Game End', 'Game Tie!')
+
     if game_End == True:
         resetBoard()
         game_End = False
