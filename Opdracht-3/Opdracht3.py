@@ -110,34 +110,40 @@ def create_ngram_model():
     main(text, lan, df)
 
 
-def detect_language(n):
-    columns = ['EN', 'DE', 'ES', 'FR', 'IT', 'PO']
-    points = [0, 0, 0, 0, 0, 0]
-    df = pd.read_csv('export_bigram-Bible.csv')
 
-    text = 'Ich habe keine Ahnung, was ich tue. Ich habe keine Ich habe keine Ich habe keine Ahnung, was ich tue. Ich habe keine Ich habe keine '
-    text = clean_dataset(text)
-    input_ngram = []
 
-    # Create ngram model for input text
+def get_ngrams(n, text):
+    ngram_list = []
     for word in text:
         for i in range(len(word)):
             ngram = (word[i:i+n])
-            input_ngram.append(ngram)
+            ngram_list.append(ngram)
+    return ngram_list
 
-    for col in columns:
-        print(col)
+
+def detect_language(n, text):
+    # Language scores
+    languages = {'EN': 0, 'DE': 0,'FR': 0,'ES': 0,'IT': 0,'PO': 0,}
+    # Load bigram training set
+    df = pd.read_csv('export_bigram-Bible.csv')
+    
+    text = clean_dataset(text) # Clean the test data
+    input_ngrams = get_ngrams(n, text) # Create ngrams from  test data
+
+    # For each language 
+    for lan in languages:
+        print(lan)
         lan_ods = []
 
-        for ngram in input_ngram:
+        for ngram in input_ngrams:
 
             if ngram in df.values:
                 row = (df.loc[df['ngram'] == ngram].index)  # locate row
                 index = row[0]
                 row = df.loc[index]
-                ngram_total = row[col]
+                ngram_total = row[lan]
                 # Normalize ngram for language
-                ngram_chance = (ngram_total / df[col].sum())
+                ngram_chance = (ngram_total / df[lan].sum())
 
             else:
                 ngram_chance = 1
@@ -160,8 +166,7 @@ def detect_language(n):
         #points[index] += ngram_chance
 
 
-detect_language(2)
-
-
+text = 'Ich habe keine Ahnung, was ich tue. Ich habe keine Ich habe keine Ich habe keine Ahnung, was ich tue. Ich habe keine Ich habe keine '
+detect_language(2, text)
 # create_empty_dataframe()
 # create_ngram_model()
