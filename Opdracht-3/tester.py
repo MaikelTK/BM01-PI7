@@ -2,6 +2,7 @@ from string import punctuation, digits
 import re as re
 from nltk.tokenize import RegexpTokenizer
 import pandas as pd
+import math
 
 
 # Remove al chars except the alphabet
@@ -23,13 +24,17 @@ def get_ngrams(n, text):
 
 
 def detect_language(n, text, csv):
+    
     # Language scores
     languages = {'EN': [], 'DE': [],'FR': [],'ES': [],'IT': [],'AL': []}
     # Load bigram training set
     df = pd.read_csv(csv)
     
+    print('Test data: ', text)
     text = clean_dataset(text) # Clean the test data
+    print(len(text), 'words in test data.')
     input_ngrams = get_ngrams(n, text) # Create ngrams from test data
+    print(len(input_ngrams), 'ngrams in test data')
 
     # For each ngrm in test data
     for ngram in input_ngrams:
@@ -46,26 +51,22 @@ def detect_language(n, text, csv):
                     ngram_total = 1
 
                 ngram_chance = (ngram_total / df[lan].sum()) # Normalize data
-                languages[lan].append(ngram_chance) # Save chance in language list
+                languages[lan].append(math.log(ngram_chance)) # Save log(chance) in language list
     
-    # TODO: calculate percentage
-    # kans * kans * kans / som van kansen
-    test_lan = ''
-    test_val = 0    
+    result = [-math.inf, '']
     for lan in languages:
         total = sum(languages[lan])
+        if total > result[0]:
+            result[0] = total
+            result[1] = lan
         print(lan, total)
-
-        if total > test_val:
-            test_val = total
-            test_lan = lan
-    
-    print('Language = ', test_lan)
+    print('Test data language = ', result[1])
+        
     
                 
 
 
-text = 'Unë shes makinën time blu te gjyshi sepse jam i varur nga demi i kuq dhe kafeja dhe ëmbëlsirat.'
+text = 'el torro loco mucho grande'
 tri_csv = 'trigram-bible.csv'
 bi_csv = 'bigram-bible.csv'
 
