@@ -14,6 +14,7 @@ def clean_dataset(dataset):
     return words
 
 
+# Get ngrams from given text
 def get_ngrams(n, text):
     ngram_list = []
     for word in text:
@@ -23,16 +24,13 @@ def get_ngrams(n, text):
     return ngram_list
 
 
-def detect_language(n, text, csv):
-    
+# Get ngram chances from given text
+def get_chances(n, text, csv):
     # Language scores
     languages = {'EN': [], 'DE': [],'FR': [],'ES': [],'IT': [],'AL': []}
     # Load bigram training set
     df = pd.read_csv(csv)
     
-    print('Test data: ', text)
-    text = clean_dataset(text) # Clean the test data
-    print(len(text), 'words in test data.')
     input_ngrams = get_ngrams(n, text) # Create ngrams from test data
     print(len(input_ngrams), 'ngrams in test data')
 
@@ -44,15 +42,14 @@ def detect_language(n, text, csv):
 
             # For each language, find ngram chance
             for lan in languages:
-                ngram_total = row[lan] # Get chance from row
-
-                # Smoothing?
-                if ngram_total == 0:
-                    ngram_total = 1
-
-                ngram_chance = (ngram_total / df[lan].sum()) # Normalize data
+                ngram_chance = row[lan] # Get chance from row
                 languages[lan].append(math.log(ngram_chance)) # Save log(chance) in language list
-    
+
+    return languages
+
+
+# Get the correct languages based on ngram chances
+def get_language(languages):
     result = [-math.inf, '']
     for lan in languages:
         total = sum(languages[lan])
@@ -61,13 +58,23 @@ def detect_language(n, text, csv):
             result[1] = lan
         print(lan, total)
     print('Test data language = ', result[1])
-        
-    
-                
 
 
-text = 'el torro loco mucho grande'
-tri_csv = 'trigram-bible.csv'
-bi_csv = 'bigram-bible.csv'
+# Run all methods for detecting a language
+def test():
+    tri_chance_csv = "Opdracht-3/csv/trigram-chance.csv"
+    bi_chance_csv = "Opdracht-3/csv/bigram-chance.csv"
 
-detect_language(3, text, tri_csv)
+    text = input('Feed me words... ')
+    text = clean_dataset(text) # Clean the test data
+    print(len(text), ' total words in test text.')
+    print(text)
+    print('About to check the language with bigrams.')
+    languages = get_chances(2, text, bi_chance_csv)
+    get_language(languages)
+    print('About to check the language with trigrams.')
+    languages = get_chances(3, text, tri_chance_csv)
+    get_language(languages)
+
+# Run file
+test()
