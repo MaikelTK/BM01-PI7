@@ -1,27 +1,29 @@
-import pandas as pd
-from string import punctuation, digits
-import re as re
 from nltk.tokenize import RegexpTokenizer
+import re as re
+from string import punctuation, digits
+import numpy as np 
+import csv
+import math
+import time
 
 
-# Create new (empty dataframe)
-def create_empty_dataframe(csv):
-    columns = ['ngram', 'EN', 'DE', 'ES', 'FR', 'IT', 'AL']
-    df = pd.DataFrame(columns=columns)
-    df.to_csv(csv, index=None, header=True)
-
-
-# Load dataset
-def load_dataset(url):
-    f = open(url, 'r')
+# Load file
+def load_file(filepath:str):
+    f = open(filepath, 'r')
     data = f.read()
     f.close()
-    #data = data[200000:210000]
     return data
 
 
+# Save dictionary as json
+def save_dict(dictionary: dict, filepath:str):
+    f = open(filepath, 'w')
+    f.write(str(dictionary))
+    f.close()
+
+
 # Remove al chars except the alphabet
-def clean_dataset(dataset):
+def clean_dataset(dataset:list):
     words = re.sub(r"\d+", "", dataset)  # Remove digits
     words = words.lower()
     tokenizer = RegexpTokenizer(r"\w+")  # Remove everything but words
@@ -29,109 +31,148 @@ def clean_dataset(dataset):
     return words
 
 
-# Get ngram frequencies from text
-def create_ngram_freq(text, n, language, df):
+# Get Ngrams from text
+def get_ngrams(text:list, n:int):
     text.sort()
-    x = (len(text) / 100)
-    counter = 0
-    percentage = 0
-    print('Creating ', n, 'grams...')
+    ngram_list = []
 
     for word in text:
-
-        counter += 1
-        if counter >= x:
-            percentage += 1
-            print(percentage , '% Done...', round(x * percentage), '/', len(text))
-            counter = 0
-
         for i in range(len(word)):
             ngram = (word[i:i+n])
-            if ngram not in df.values: #smoothing by using 1 as default value instead of 0
-                df = df.append({'ngram': ngram, 'EN': 1, 'DE': 1, 'ES': 1,
-                                'FR': 1, 'IT': 1, 'AL': 1}, ignore_index=True)
-            if ngram in df.values:
-                row = df.loc[df['ngram'] == ngram]  # locate row of
-                df.loc[row.index, language] += 1
-
-    print(df.sort_values(by=[language], ascending=False))
-    return df
+            ngram_list.append(ngram)
+    ngram_list.sort()        
+    return ngram_list
 
 
-# Create ngram chance df
-def create_ngram_chance(freq_csv, chance_csv, lan):
-    freq_df = pd.read_csv(freq_csv)
-    chance_df = pd.read_csv(chance_csv)
-    columns = lan 
-
-    for index, row in freq_df.iterrows():
-        ngram = row['ngram']
-        ngram_chances = {'ngram': ngram, 'EN': 0, 'DE': 0, 'ES': 0, 'FR': 0, 'IT': 0, 'AL': 0}
-
-        for col in columns:
-            freq = row[col]
-            chance = (freq / (freq_df[col].sum()))
-            ngram_chances[col] = chance    
-
-        chance_df = chance_df.append(ngram_chances, ignore_index=True)
-    chance_df.to_csv(chance_csv, index=None, header=True) # Save dataframe as csv 
+# Get Ngram frequencies
+def get_ngram_freq(ngrams:list):
+    unique_ngrams = np.array(ngrams)
+    unique_ngrams = np.unique(unique_ngrams)
+    
+    ngram_dict = {}
+    for ngram in unique_ngrams:
+        ngram_dict.update({ngram:0})
+    for ngram in ngrams:
+        ngram_dict[ngram] += 1
+    return ngram_dict
 
 
-# Create Ngram dataframe
-def train(n, csv):
+# Main methdo for 
+def train_main(n:int):
 
-    #Datasets
+     #Datasets
     languages = [
         ['DE', "Opdracht-3/traning_data/Bible_DE.txt"],  # German
         ['EN', "Opdracht-3/traning_data/Bible_EN.txt"],  # English
         ['FR', "Opdracht-3/traning_data/Bible_FR.txt"],  # French
-        ['ES', "Opdracht-3/traning_data/Bible_ES.txt"],  # Spanish
+        ['SP', "Opdracht-3/traning_data/Bible_ES.txt"],  # Spanish
         ['AL', "Opdracht-3/traning_data/Bible_AL.txt"],  # Albanian
         ['IT', "Opdracht-3/traning_data/Bible_IT.txt"]  # Italian
     ]
 
-    # Create ngrams for each language 
+    all_lan_dict = {}
+
     for lan in languages:
-        df = pd.read_csv(csv)
-        print(df)
-        language = lan[0]
-        text = lan[1]
-        
-        print('About to read: ', text)
-        dataset = load_dataset(text)   # Load text dataset 
-        print('Removing digits and punctuation')
-        clean_data = clean_dataset(dataset)  # Clean the dataset
-        print(len(clean_data), 'words found')
+        lan_id = lan[0]
+        lan_url = lan[1]
+        print('Training: ', lan_id)
 
-        ngram_model = create_ngram_freq(clean_data, n, language, df) # Get ngram dataframe from text
-        print('Ngram dataframe: ', ngram_model)
-        ngram_model.to_csv(csv, index=None, header=True) # Save dataframe as csv 
+        data = load_file(lan_url)
+        data = clean_dataset(data)
+        print(len(data), 'words')
+        ngrams = get_ngrams(data, n)
+        print(len(ngrams), 'ngrams')
+        ngram_freq_dict = get_ngram_freq(ngrams)    
+        all_lan_dict.update({lan_id: ngram_freq_dict})
 
-
-# Call all methods for training the model
-def run_all():
-    print('About to create BIgram frequency')
-    train(2, bi_freq_csv)  
-    print('About to create BIgram chances')
-    create_ngram_chance(bi_freq_csv, bi_chance_csv, columns)
-
-    print()
-    print('About to create TRIgram frequency')
-    train(3, tri_freq_csv)
-    print('About to create Trigram chances')
-    create_ngram_chance(tri_freq_csv, tri_chance_csv, columns)
+    return all_lan_dict
 
 
+'--------------------------------------------------'
 
 
-tri_freq_csv = "Opdracht-3/csv/trigram-freq.csv"
-tri_chance_csv = "Opdracht-3/csv/trigram-chance.csv"
-bi_freq_csv = "Opdracht-3/csv/bigram-freq.csv"
-bi_chance_csv = "Opdracht-3/csv/bigram-chance.csv"
-columns = ['EN', 'DE', 'FR', 'ES', 'IT', 'AL' ]
+# Calc ngram chances
+def get_ngram_chances(text_ngrams:list, ngram_freq:dict):
+    ngram_chances = []
 
-create_empty_dataframe(tri_chance_csv) # Create empty csv
-create_empty_dataframe(tri_freq_csv) # Create empty csv
-create_empty_dataframe(bi_chance_csv) # Create empty csv
-create_empty_dataframe(bi_freq_csv) # Create empty csv
-run_all()
+    for ngram in text_ngrams:
+        freq = 0        
+        if ngram not in ngram_freq:
+            freq = 1
+        else:
+            freq = ngram_freq[ngram]
+
+        freqsum = sum(ngram_freq.values())
+        chance = math.log(freq / freqsum)
+        ngram_chances.append(chance)
+    
+    chance_score = sum(ngram_chances)
+    return chance_score
+
+
+# Get langauage with highest score
+def get_highest_score(languages:dict):
+    highest_score = max(languages.values())
+    highest_score_language = ''
+
+    for lan in languages:
+        if languages[lan] == highest_score:
+            highest_score_language = lan
+    return [highest_score_language, highest_score]
+
+
+# Test the given input text
+def test_text(text:str, ngram_freq:dict, n:int):
+    languages = {'EN': 0,'DE':0, 'FR':0, 'SP':0, 'AL':0, 'IT':0}
+    start_time = time.time()
+       
+
+    text = clean_dataset(text)
+    text_ngrams = get_ngrams(text, n)
+    print(n, 'GRAMS: ')
+    print(text_ngrams)
+
+    for lan in languages:
+        chance_score = get_ngram_chances(text_ngrams, ngram_freq[lan])
+        languages[lan] = chance_score
+        print(lan, ' log() score: ', chance_score)
+    
+    highest_score = get_highest_score(languages)
+    print('Detected language: ', highest_score[0])
+    duration = time.time() - start_time 
+    print('Elapsed time: ', duration)
+
+
+# Train bigram and trigram    
+bigram_path = 'bigram.txt'
+trigram_path = 'trigram.txt'
+
+print('*' * 10,'Training bigrams', '*' * 10)
+bigram_freq:dict = train_main(2)
+print()
+print('*' * 10, 'Training trigrams', '*' * 10)
+trigram_freq:dict = train_main(3)
+
+#save_dict(bigram_freq, bigram_path)
+#save_dict(trigram_freq, trigram_path)
+#bigram_freq = load_file(bigram_path)
+#trigram_freq = load_file(trigram_path)
+
+running = True
+while running:
+    print('*'*40)
+    text = input('Feed me words... (or type quit to end):  b')
+    if text == 'quit':
+        running = False
+    else:
+        print('Bigram testing')
+        test_text(text, bigram_freq, 2)
+        print()
+        print('Trigram testing')
+        test_text(text, trigram_freq, 3)
+
+
+
+
+
+
